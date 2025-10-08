@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Wellness Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .hero-section h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .hero-section p {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            padding: 50px 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .tool-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            border: 3px solid transparent;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            border-color: #667eea;
+        }
+        
+        .tool-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .tool-card h2 {
+            color: #2e7d32;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .tool-card p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .tool-features {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        
+        .tool-features li {
+            padding: 8px 0;
+            color: #555;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .tool-features li:before {
+            content: "✓ ";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #1f77b4 0%, #2e7d32 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(31, 119, 180, 0.4);
+        }
+        
+        .tool-card.inflation {
+            border-top: 5px solid #ff6b6b;
+        }
+        
+        .tool-card.gdp {
+            border-top: 5px solid #4ecdc4;
+        }
+        
+        .tool-card.interest {
+            border-top: 5px solid #f7b731;
+        }
+        
+        .tool-card.policy {
+            border-top: 5px solid #5f27cd;
+        }
+        
+        .tool-card.advisor {
+            border-top: 5px solid #00d2d3;
+        }
+        
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 50px;
+        }
+        
+        .stats-section {
+            background: #f8f9fa;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 30px auto 0;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1f77b4;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background: #f0f2f6;">
+    
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <h1>🏦 Financial Wellness Dashboard</h1>
+        <p>Your Complete Financial Analysis & Planning Platform</p>
+        <p style="font-size: 1rem; opacity: 0.8;">Make informed decisions with AI-powered forecasts and personalized recommendations</p>
+    </div>
+    
+    <!-- Stats Section -->
+    <div class="stats-section">
+        <h2 style="color: #2e7d32; margin-bottom: 10px;">Comprehensive Financial Insights</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Analysis Tools</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">12</div>
+                <div class="stat-label">Month Forecasts</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">AI</div>
+                <div class="stat-label">Powered Insights</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Access</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tools Grid -->
+    <div class="tools-grid">
+        
+        <!-- Inflation Forecast Card -->
+        <a href="/inflation-forecast" class="tool-card inflation">
+            <span class="tool-icon">📈</span>
+            <h2>Inflation Forecast</h2>
+            <p>Track and predict inflation trends with advanced AI models</p>
+            <ul class="tool-features">
+                <li>12-month inflation predictions</li>
+                <li>Historical trend analysis</li>
+                <li>Interactive visualizations</li>
+                <li>Confidence intervals</li>
+            </ul>
+            <span class="cta-button">View Forecast →</span>
+        </a>
+        
+        <!-- GDP Forecast Card -->
+        <a href="/gdp-forecast" class="tool-card gdp">
+            <span class="tool-icon">📊</span>
+            <h2>GDP Growth Forecast</h2>
+            <p>Analyze economic growth patterns and future projections</p>
+            <ul class="tool-features">
+                <li>Quarterly GDP predictions</li>
+                <li>Growth rate analysis</li>
+                <li>Economic trend insights</li>
+                <li>Data-driven forecasts</li>
+            </ul>
+            <span class="cta-button">View Forecast →</span>
+        </a>
+        
+        <!-- Interest Rates Forecast Card -->
+        <a href="/interest-rates-forecast" class="tool-card interest">
+            <span class="tool-icon">💰</span>
+            <h2>Interest Rates Forecast</h2>
+            <p>Predict lending and deposit rate movements</p>
+            <ul class="tool-features">
+                <li>Multiple rate predictions</li>
+                <li>Repo, bond & loan rates</li>
+                <li>Rate change analysis</li>
+                <li>Financial planning support</li>
+            </ul>
+            <span class="cta-button">View Forecast →</span>
+        </a>
+        
+        <!-- Policy Recommendations Card -->
+        <a href="/policy-recommendations" class="tool-card policy">
+            <span class="tool-icon">🔍</span>
+            <h2>Policy Recommendations</h2>
+            <p>Get personalized insurance policy suggestions</p>
+            <ul class="tool-features">
+                <li>Risk assessment analysis</li>
+                <li>Personalized recommendations</li>
+                <li>Coverage optimization</li>
+                <li>AI-powered insights</li>
+            </ul>
+            <span class="cta-button">Get Recommendations →</span>
+        </a>
+        
+        <!-- Financial Advisor Card -->
+        <a href="/financial-advisor" class="tool-card advisor">
+            <span class="tool-icon">💡</span>
+            <h2>Financial Advisor</h2>
+            <p>Comprehensive financial planning and analysis tool</p>
+            <ul class="tool-features">
+                <li>Coverage adequacy check</li>
+                <li>Premium affordability analysis</li>
+                <li>Financial health scoring</li>
+                <li>Detailed action plans</li>
+            </ul>
+            <span class="cta-button">Start Analysis →</span>
+        </a>
+        
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <h3>🌟 Make Smarter Financial Decisions Today</h3>
+        <p style="margin-top: 15px; opacity: 0.8;">
+            All forecasts and recommendations are based on advanced AI models and historical data analysis.<br>
+            For personalized financial advice, please consult with a certified financial planner.
+        </p>
+        <p style="margin-top: 20px; font-size: 0.9rem;">
+            © 2025 Financial Wellness Dashboard. All rights reserved.
+        </p>
+    </div>
+    
+</body>
+</html>

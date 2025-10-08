@@ -1,0 +1,16 @@
+flask
+pandas
+numpy
+python-dotenv
+pillow
+pytesseract
+streamlit
+PyPDF2
+cohere
+fpdf
+prophet
+openpyxl
+plotly
+markdown
+google-generativeai
+requests

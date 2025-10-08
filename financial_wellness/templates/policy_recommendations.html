@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Policy Recommendations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #5f27cd 0%, #341f97 100%);
+            padding: 30px;
+            color: white;
+            text-align: center;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin: 20px;
+            padding: 10px 20px;
+            background: white;
+            color: #1f77b4;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .back-link:hover {
+            background: #f0f2f6;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 30px;
+        }
+        
+        .input-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .results-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+        
+        .form-section h3 {
+            color: #5f27cd;
+            border-bottom: 2px solid #5f27cd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #5f27cd;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #5f27cd 0%, #341f97 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(95, 39, 205, 0.4);
+        }
+        
+        .risk-score-box {
+            background: linear-gradient(135deg, #5f27cd 0%, #341f97 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .risk-score-value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .risk-level {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .recommendation-content {
+            line-height: 1.8;
+        }
+        
+        .recommendation-content h2 {
+            color: #5f27cd;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .recommendation-content h3 {
+            color: #2e7d32;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .recommendation-content ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .recommendation-content li {
+            margin: 8px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #5f27cd;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body style="background: #f0f2f6; margin: 0; padding: 0;">
+    
+    <a href="/" class="back-link">← Back to Dashboard</a>
+    
+    <div class="page-header">
+        <h1>🔍 Policy Recommendations</h1>
+        <p>AI-Powered Personalized Insurance Policy Suggestions</p>
+    </div>
+    
+    <div class="main-grid">
+        
+        <!-- Input Panel -->
+        <div class="input-panel">
+            <form id="policyForm">
+                <div class="form-section">
+                    <h3>Personal Information</h3>
+                    
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" min="18" max="80" value="30" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="marital_status">Marital Status</label>
+                        <select id="marital_status" name="marital_status">
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Divorced">Divorced</option>
+                            <option value="Widowed">Widowed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="occupation">Occupation</label>
+                        <select id="occupation" name="occupation">
+                            <option value="Salaried">Salaried</option>
+                            <option value="Self-Employed">Self-Employed</option>
+                            <option value="Business Owner">Business Owner</option>
+                            <option value="Professional">Professional</option>
+                            <option value="Student">Student</option>
+                            <option value="Retired">Retired</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Financial Details</h3>
+                    
+                    <div class="form-group">
+                        <label for="income">Annual Income (₹)</label>
+                        <input type="number" id="income" name="income" min="50000" step="50000" value="500000" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="policy_type">Insurance Type</label>
+                        <select id="policy_type" name="policy_type">
+                            <option value="Term Life Insurance">Term Life Insurance</option>
+                            <option value="Health Insurance">Health Insurance</option>
+                            <option value="Family Floater Plan">Family Floater Plan</option>
+                            <option value="Critical Illness Cover">Critical Illness Cover</option>
+                            <option value="Personal Accident Insurance">Personal Accident Insurance</option>
+                            <option value="Group Health Insurance">Group Health Insurance</option>
+                            <option value="Group Life Insurance">Group Life Insurance</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Risk Factors</h3>
+                    
+                    <div class="form-group">
+                        <label for="smoker">Do you smoke?</label>
+                        <select id="smoker" name="smoker">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="driving_record">Driving Record</label>
+                        <select id="driving_record" name="driving_record">
+                            <option value="Clean">Clean</option>
+                            <option value="Minor Violations">Minor Violations</option>
+                            <option value="Major Violations">Major Violations</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="disease">Pre-existing Condition</label>
+                        <select id="disease" name="disease">
+                            <option value="None">None</option>
+                            <option value="Diabetes">Diabetes</option>
+                            <option value="Hypertension">Hypertension</option>
+                            <option value="Asthma">Asthma</option>
+                            <option value="Heart Disease">Heart Disease</option>
+                            <option value="Thyroid">Thyroid</option>
+                            <option value="Obesity">Obesity</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-primary">🔍 Get Recommendations</button>
+            </form>
+        </div>
+        
+        <!-- Results Panel -->
+        <div class="results-panel">
+            <div id="welcomeMessage">
+                <h2 style="color: #5f27cd; text-align: center; margin-bottom: 20px;">
+                    Welcome to Policy Recommendations
+                </h2>
+                <p style="text-align: center; color: #666; font-size: 1.1rem; line-height: 1.8;">
+                    Fill in your personal and financial details in the form on the left to receive 
+                    personalized insurance policy recommendations powered by AI.
+                </p>
+                <div style="text-align: center; margin-top: 30px;">
+                    <img src="https://via.placeholder.com/400x300/5f27cd/ffffff?text=Policy+Analysis" 
+                         alt="Policy Analysis" style="max-width: 100%; border-radius: 10px;">
+                </div>
+                <div style="margin-top: 30px; padding: 20px; background: #f0f2f6; border-radius: 10px;">
+                    <h3 style="color: #2e7d32;">What you'll get:</h3>
+                    <ul style="line-height: 2;">
+                        <li>📊 Comprehensive risk assessment</li>
+                        <li>💡 Personalized policy recommendations</li>
+                        <li>💰 Coverage amount suggestions</li>
+                        <li>📋 Premium budget guidance</li>
+                        <li>🎯 Action steps for policy selection</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="loading" style="display: none;" class="loading">
+                <div class="spinner"></div>
+                <p>Analyzing your profile and generating personalized recommendations...</p>
+            </div>
+            
+            <div id="results" style="display: none;">
+                <div class="risk-score-box">
+                    <div>Risk Assessment Score</div>
+                    <div class="risk-score-value" id="riskScore">--</div>
+                    <div class="risk-level" id="riskLevel">--</div>
+                </div>
+                
+                <div class="recommendation-content" id="recommendationContent"></div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <script>
+        document.getElementById('policyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show loading
+            document.getElementById('welcomeMessage').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            
+            // Get form data
+            const formData = new FormData(e.target);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            try {
+                const response = await fetch('/api/policy-recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Hide loading, show results
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('results').style.display = 'block';
+                    
+                    // Update risk score
+                    const riskScore = result.risk_score;
+                    document.getElementById('riskScore').textContent = riskScore.toFixed(1);
+                    
+                    let riskLevel = '';
+                    if (riskScore < 30) {
+                        riskLevel = '🟢 Low Risk';
+                    } else if (riskScore < 60) {
+                        riskLevel = '🟡 Medium Risk';
+                    } else {
+                        riskLevel = '🔴 High Risk';
+                    }
+                    document.getElementById('riskLevel').textContent = riskLevel;
+                    
+                    // Format and display recommendation
+                    const recommendation = result.recommendation
+                        .replace(/\n/g, '<br>')
+                        .replace(/##\s*(.+)/g, '<h2>$1</h2>')
+                        .replace(/###\s*(.+)/g, '<h3>$1</h3>')
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.+?)\*/g, '<em>$1</em>');
+                    
+                    document.getElementById('recommendationContent').innerHTML = recommendation;
+                } else {
+                    alert('Error: ' + result.error);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('welcomeMessage').style.display = 'block';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('welcomeMessage').style.display = 'block';
+            }
+        });
+    </script>
+    
+</body>
+</html>

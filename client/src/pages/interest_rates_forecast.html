@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Interest Rates Forecast Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #f7b731 0%, #f39c12 100%);
+            padding: 30px;
+            color: white;
+            text-align: center;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin: 20px;
+            padding: 10px 20px;
+            background: white;
+            color: #1f77b4;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .back-link:hover {
+            background: #f0f2f6;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        .rate-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .rate-selector label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 15px;
+        }
+        
+        .rate-selector select {
+            padding: 10px 20px;
+            border: 2px solid #f7b731;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-box {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .metric-box h3 {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #f7b731;
+        }
+        
+        .metric-trend {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+        
+        #loadingSpinner {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #f7b731;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body style="background: #f0f2f6; margin: 0; padding: 0;">
+    
+    <a href="/" class="back-link">← Back to Dashboard</a>
+    
+    <div class="page-header">
+        <h1>💰 Interest Rates Forecast Dashboard</h1>
+        <p>Track and Predict Interest Rate Movements</p>
+    </div>
+    
+    <div class="dashboard-container">
+        
+        <!-- Rate Selector -->
+        <div class="rate-selector">
+            <label for="rateType">Select Interest Rate:</label>
+            <select id="rateType" onchange="loadRateData()">
+                <option value="Repo_Rate">RBI Repo Rate</option>
+                <option value="Bond_10Y">10-Year Government Bond</option>
+                <option value="Home_Loan_Rate">Home Loan Rate</option>
+                <option value="Deposit_Rate">Bank Deposit Rate</option>
+                <option value="Personal_Loan_Rate">Personal Loan Rate</option>
+                <option value="Car_Loan_Rate">Car Loan Rate</option>
+            </select>
+            <span id="rateDescription" style="margin-left: 20px; color: #666;"></span>
+        </div>
+        
+        <div id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>Loading interest rate data and generating forecast...</p>
+        </div>
+        
+        <div id="content" style="display: none;">
+            
+            <!-- Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-box">
+                    <h3>Current Rate</h3>
+                    <div class="metric-value" id="latestActual">--</div>
+                    <div class="metric-trend">Latest data</div>
+                </div>
+                
+                <div class="metric-box">
+                    <h3>Average Forecast</h3>
+                    <div class="metric-value" id="avgForecast">--</div>
+                    <div class="metric-trend">Next 12 months</div>
+                </div>
+                
+                <div class="metric-box">
+                    <h3>Direction</h3>
+                    <div class="metric-value" id="direction" style="font-size: 2rem;">--</div>
+                    <div class="metric-trend">Expected movement</div>
+                </div>
+            </div>
+            
+            <!-- Chart -->
+            <div class="chart-container">
+                <div id="ratesChart"></div>
+            </div>
+            
+            <!-- Insights -->
+            <div class="chart-container">
+                <h2 style="color: #2e7d32; margin-bottom: 20px;">📊 Rate Analysis & Recommendations</h2>
+                <div id="insights"></div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <script>
+        const rateDescriptions = {
+            'Repo_Rate': 'The key policy rate at which RBI lends to commercial banks',
+            'Bond_10Y': 'Yield on 10-year government bonds - long-term benchmark rate',
+            'Home_Loan_Rate': 'Average home loan interest rate offered by banks',
+            'Deposit_Rate': 'Average interest rate on bank fixed deposits',
+            'Personal_Loan_Rate': 'Average interest rate on personal loans',
+            'Car_Loan_Rate': 'Average interest rate on car loans'
+        };
+        
+        const rateRecommendations = {
+            'Repo_Rate': {
+                increasing: 'RBI is likely tightening monetary policy to control inflation. Expect higher borrowing costs across the economy.',
+                decreasing: 'RBI is easing monetary policy to stimulate growth. This may lead to lower interest rates on loans and deposits.'
+            },
+            'Bond_10Y': {
+                increasing: 'Rising yields suggest higher future interest rates. Consider locking in current rates for long-term borrowing.',
+                decreasing: 'Falling yields indicate expectations of lower rates. May be a good time for long-term fixed-income investments.'
+            },
+            'Home_Loan_Rate': {
+                increasing: 'Home loan rates are rising. If planning to buy property, consider locking in current rates before further increases.',
+                decreasing: 'Falling home loan rates present a good opportunity for new borrowers or refinancing existing loans.'
+            },
+            'Deposit_Rate': {
+                increasing: 'Rising deposit rates are good for savers. Consider locking in higher rates with longer-term deposits.',
+                decreasing: 'Falling deposit rates reduce returns on savings. Explore alternative investment options for better returns.'
+            },
+            'Personal_Loan_Rate': {
+                increasing: 'Personal loan costs are rising. Avoid unnecessary borrowing and consider prepaying existing loans.',
+                decreasing: 'Lower personal loan rates may be favorable for debt consolidation or planned borrowing.'
+            },
+            'Car_Loan_Rate': {
+                increasing: 'Car loan rates are increasing. If planning to buy, compare offers and lock in rates soon.',
+                decreasing: 'Falling car loan rates present good financing opportunities. Consider refinancing existing loans.'
+            }
+        };
+        
+        // Load interest rates data
+        async function loadRateData() {
+            const rateType = document.getElementById('rateType').value;
+            document.getElementById('rateDescription').textContent = rateDescriptions[rateType];
+            
+            // Show loading
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            
+            try {
+                const response = await fetch(`/api/interest-rates-data?rate_type=${rateType}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Hide loading
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    document.getElementById('content').style.display = 'block';
+                    
+                    // Update metrics
+                    document.getElementById('latestActual').textContent = data.latest_actual.toFixed(2) + '%';
+                    document.getElementById('avgForecast').textContent = data.avg_forecast.toFixed(2) + '%';
+                    
+                    // Determine direction
+                    const diff = data.avg_forecast - data.latest_actual;
+                    let direction = '';
+                    let trend = '';
+                    if (Math.abs(diff) < 0.1) {
+                        direction = '➡️ Stable';
+                        trend = 'stable';
+                    } else if (diff > 0) {
+                        direction = '📈 Rising';
+                        trend = 'increasing';
+                    } else {
+                        direction = '📉 Falling';
+                        trend = 'decreasing';
+                    }
+                    
+                    document.getElementById('direction').textContent = direction;
+                    
+                    // Plot chart
+                    const graphData = JSON.parse(data.graph);
+                    Plotly.newPlot('ratesChart', graphData.data, graphData.layout, {responsive: true});
+                    
+                    // Generate insights
+                    const recommendation = rateRecommendations[rateType][trend] || rateRecommendations[rateType]['stable'] || 'Monitor rate movements for opportunities.';
+                    
+                    const insights = `
+                        <div style="line-height: 1.8;">
+                            <p><strong>Rate Type:</strong> ${rateDescriptions[rateType]}</p>
+                            
+                            <p><strong>Current Situation:</strong> The current rate is <strong>${data.latest_actual.toFixed(2)}%</strong>.</p>
+                            
+                            <p><strong>Forecast:</strong> The rate is expected to ${trend === 'stable' ? 'remain stable' : trend === 'increasing' ? 'increase' : 'decrease'}, 
+                            averaging <strong>${data.avg_forecast.toFixed(2)}%</strong> over the next 12 months 
+                            (${diff > 0 ? '+' : ''}${diff.toFixed(2)}% change).</p>
+                            
+                            <p><strong>💡 Recommendation:</strong> ${recommendation}</p>
+                            
+                            <p><strong>Action Items:</strong></p>
+                            <ul style="margin-left: 20px;">
+                                ${trend === 'increasing' ? `
+                                    <li>Review existing variable-rate loans and consider refinancing to fixed rates</li>
+                                    <li>Accelerate major purchases requiring loans before rates rise further</li>
+                                    <li>For savers: This may be a good time to lock in higher deposit rates</li>
+                                ` : trend === 'decreasing' ? `
+                                    <li>Consider refinancing existing high-rate loans</li>
+                                    <li>Explore investment opportunities beyond fixed deposits</li>
+                                    <li>For borrowers: Wait for further rate decreases before locking in long-term rates</li>
+                                ` : `
+                                    <li>Maintain current strategy with periodic reviews</li>
+                                    <li>Build emergency fund with balanced approach</li>
+                                    <li>Stay informed about policy changes that may affect rates</li>
+                                `}
+                            </ul>
+                        </div>
+                    `;
+                    
+                    document.getElementById('insights').innerHTML = insights;
+                } else {
+                    alert('Error loading data: ' + data.error);
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+        
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', loadRateData);
+    </script>
+    
+</body>
+</html>
