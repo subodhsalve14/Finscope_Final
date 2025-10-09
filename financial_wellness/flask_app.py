@@ -6,6 +6,12 @@ import plotly.graph_objects as go
 import plotly
 import json
 import numpy as np
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)  # ✅ fixes browser “Failed to fetch” due to CORS
+
 
 app = Flask(__name__)
 
@@ -539,67 +545,81 @@ def get_policy_recommendation():
     """Get policy recommendations based on user profile"""
     try:
         from risk_assesment import calculate_risk_score
+        from search_serp import get_policy_recommendations_from_serpapi
         from utils import build_prompt_with_search
         from gemini_llm import query_gemini
-        
+
         data = request.get_json()
-        
+
+        # Extract data safely
         age = int(data.get('age', 30))
+        gender = data.get('gender', 'Male')
+        occupation = data.get('occupation', 'Employee')
         income = float(data.get('income', 500000))
-        driving_record = data.get('driving_record', 'Clean')
         smoker = data.get('smoker', 'No')
+        driving_record = data.get('driving_record', 'Clean')
         policy_type = data.get('policy_type', 'Health Insurance')
-        
-        # Calculate risk score
+        disease = data.get('disease', 'None')
+
+        # 1️⃣ Calculate risk score
         risk_score = calculate_risk_score(age, income, driving_record, smoker)
-        
-        # Build prompt
+
+        # 2️⃣ Build user profile dictionary
         user_profile = {
-            'Age': age,
-            'Income': income,
-            'Driving Record': driving_record,
-            'Smoker': smoker,
-            'Policy Type': policy_type
+            "Age": age,
+            "Gender": gender,
+            "Occupation": occupation,
+            "Income Level": income,
+            "Insurance Type": policy_type,
+            "Smoker": smoker,
+            "Driving Record": driving_record,
+            "Risk Score": risk_score,
+            "Pre-existing Condition": disease,
         }
-        
-        prompt = build_prompt_with_search(user_profile, risk_score, policy_type)
-        
-        # Get recommendation from Gemini
+
+        # 3️⃣ Get real policy recommendations (SERP API)
+        search_results = get_policy_recommendations_from_serpapi(user_profile)
+        if not search_results:
+            search_results = [{"title": "No results found", "link": "", "snippet": ""}]
+
+        # 4️⃣ Build Gemini prompt using search results
+        prompt = build_prompt_with_search(user_profile, search_results)
+
+        # 5️⃣ Query Gemini for insights
         recommendation = query_gemini(prompt)
-        
+
+        risk_category = calculate_risk_score(age, income, driving_record, smoker)
+        # 6️⃣ Return JSON response
         return jsonify({
-            'success': True,
-            'risk_score': float(risk_score),
-            'recommendation': recommendation
-        })
-        
+    'success': True,
+    'risk_category': risk_category,  # e.g., "🔴 High Risk"
+    'recommendation': recommendation
+}), 200
     except Exception as e:
-        # Fallback recommendation
+        print("Error in /api/policy-recommend:", str(e))
+
+        # Fallback response
         return jsonify({
-            'success': True,
-            'risk_score': 50.0,
+            'success': False,
+            'error': str(e),
             'recommendation': f"""
-## Policy Recommendations for {data.get('policy_type', 'Insurance')}
+## Policy Recommendations (Fallback)
 
-Based on your profile, here are our recommendations:
+### Risk Summary
+- Age: {data.get('age', 30)}
+- Income: ₹{data.get('income', 500000)}
+- Smoker: {data.get('smoker', 'No')}
+- Driving Record: {data.get('driving_record', 'Clean')}
+- Risk Score: Medium (Fallback)
 
-### Risk Assessment
-- Age: {data.get('age', 'N/A')}
-- Income Level: ₹{data.get('income', 'N/A'):,}
-- Risk Score: Medium
+### Suggested Coverage
+- Coverage: ₹{int(float(data.get('income', 500000))) * 10:,}
+- Term: 20–30 years
+- Premium: ₹{int(float(data.get('income', 500000))) * 0.05:,}/year
 
-### Recommended Coverage
-1. **Coverage Amount**: ₹{int(data.get('income', 500000)) * 10:,}
-2. **Policy Term**: 20-30 years
-3. **Premium Budget**: ₹{int(data.get('income', 500000)) * 0.05:,}/year (5% of income)
-
-### Next Steps
-- Compare policies from top insurers
-- Review policy terms carefully
-- Consider riders for comprehensive coverage
-- Consult a financial advisor for personalized advice
+> *Note: This is an auto-generated fallback suggestion. Please try again for personalized insights.*
 """
-        })
+        }), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
