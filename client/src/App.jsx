@@ -16,6 +16,7 @@ import GdpForecastPage from './pages/GdpForecastPage'
 import InterestRatesForecastPage from './pages/InterestRatesForecastPage'
 import PolicyRecommendationsPage from './pages/PolicyRecommendationsPage'
 import FinancialAdvisorPage from './pages/FinancialAdvisorPage'
+import SIPRecommender from './pages/investmentrecom'
 
 const App = () => {
     return (
@@ -37,6 +38,7 @@ const App = () => {
                     <Route path='/interest-rates-forecast' element={<InterestRatesForecastPage />} />
                     <Route path='/policy-recommendations' element={<PolicyRecommendationsPage />} />
                     <Route path='/financial-advisor' element={<FinancialAdvisorPage />} />
+                    <Route path='/investmentrecom' element={<SIPRecommender/>} />
                 </Routes>
             </BrowserRouter>
         </div>

@@ -171,6 +171,24 @@ const Dashboard = () => {
                             ctaText="Get Recommendations →"
                         />
 
+                        <Card
+                            to="/investmentrecom"
+                            icon={<span>💹</span>}
+                            title="Investment Recommendations"
+                            desc="Get personalized SIP, fund, and investment insights powered by AI"
+                            features={[
+                                "Goal-based SIP planning",
+                                "Top-performing fund analysis",
+                                "Personalized  insights",
+                                "Inflation aware recommendations",
+                                
+                            ]}
+                            modifier="investment"
+                            ctaText="Get Recommendations →"
+                        />
+
+
+
                     </div>
 
                     <div className="footer">

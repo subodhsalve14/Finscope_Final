@@ -14,3 +14,7 @@ plotly
 markdown
 google-generativeai
 requests
+flask
+flask-cors
+scikit-learn
+joblib
