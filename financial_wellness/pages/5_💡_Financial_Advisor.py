@@ -86,8 +86,8 @@ with st.sidebar:
     other_debts = st.number_input("Other Debts (₹)", 0, 10000000, 0, step=50000)
     
     # Assumptions
-    st.subheader("Assumptions")
-    inflation_rate = st.slider("Expected Inflation Rate (%)", 3.0, 10.0, 6.5, 0.5)
+    # st.subheader("Assumptions")
+    # inflation_rate = st.slider("Expected Inflation Rate (%)", 3.0, 10.0, 6.5, 0.5)
 
 # Function to calculate analysis
 def calculate_analysis():
