@@ -6,14 +6,10 @@ import plotly.graph_objects as go
 import plotly
 import json
 import numpy as np
-from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # ✅ fixes browser “Failed to fetch” due to CORS
-
-
-app = Flask(__name__)
+CORS(app)  # ✅ fixes browser "Failed to fetch" due to CORS
 
 # Main route - Home page with cards
 @app.route('/')
@@ -69,20 +65,23 @@ def generate_report():
     try:
         data = request.get_json()
         
+        age = int(data.get('age', 32))
+        marital_status = data.get('marital_status', 'Single')
+        dependents = int(data.get('dependents', 2))
         annual_income = float(data.get('annual_income', 800000))
         monthly_expenses = float(data.get('monthly_expenses', 40000))
         current_coverage = float(data.get('current_coverage', 5000000))
         annual_premium = float(data.get('annual_premium', 25000))
         home_loan = float(data.get('home_loan', 2000000))
-        age = int(data.get('age', 32))
-        dependents = int(data.get('dependents', 2))
+        other_debts = float(data.get('other_debts', 0))
         critical_illness = float(data.get('critical_illness', 500000))
         accident_cover = float(data.get('accident_cover', 1000000))
         inflation_rate = float(data.get('inflation_rate', 6.5))
         
         report = generate_detailed_analysis(
-            annual_income, monthly_expenses, current_coverage, annual_premium,
-            home_loan, age, dependents, critical_illness, accident_cover, inflation_rate
+            age, marital_status, dependents, annual_income, monthly_expenses, 
+            current_coverage, annual_premium, home_loan, other_debts,
+            critical_illness, accident_cover, inflation_rate
         )
         
         return jsonify({
@@ -104,8 +103,21 @@ def calculate_analysis(age, marital_status, dependents, annual_income, monthly_e
     # Basic calculations
     annual_expenses = monthly_expenses * 12
     net_savings = annual_income - annual_expenses
-    recommended_min = annual_income * 10
-    recommended_max = annual_income * 15
+    
+    # Adjust recommended coverage based on age, marital status, and dependents
+    base_multiplier = 10
+    if marital_status == 'Married':
+        base_multiplier += 2
+    if dependents > 0:
+        base_multiplier += (dependents * 1)
+    if age < 30:
+        base_multiplier += 1
+    elif age > 50:
+        base_multiplier -= 1
+    
+    recommended_min = annual_income * base_multiplier
+    recommended_max = annual_income * (base_multiplier + 5)
+    
     premium_percentage = (annual_premium / annual_income) * 100 if annual_income > 0 else 0
     total_debts = home_loan + other_debts
     
@@ -120,8 +132,10 @@ def calculate_analysis(age, marital_status, dependents, annual_income, monthly_e
     # Future expenses with inflation
     future_expenses_10y = annual_expenses * ((1 + inflation_rate/100) ** 10)
     
-    # Recommended critical illness cover
+    # Recommended critical illness cover (adjusted for age)
     recommended_ci = annual_income * 3
+    if age > 45:
+        recommended_ci = annual_income * 4  # Higher for older age
     
     # Calculate scores
     coverage_score = min(10, (current_coverage / recommended_min) * 10)
@@ -140,29 +154,41 @@ def calculate_analysis(age, marital_status, dependents, annual_income, monthly_e
     # Critical illness gap
     ci_gap = max(0, recommended_ci - critical_illness)
     
-    # Recommendations
+    # Recommendations based on profile
     recommendations = []
     
     if is_underinsured:
         recommendations.append(f"🎯 **Increase Life Insurance Coverage** to ₹{recommended_min:,.0f} (minimum) to adequately protect your family.")
     
+    if marital_status == 'Married' and dependents > 0:
+        recommendations.append(f"👨‍👩‍👧 **Family Protection Priority** - As you have {dependents} dependent(s), ensure adequate coverage for their future needs.")
+    
     if critical_illness < recommended_ci:
-        recommendations.append(f"🏥 **Enhance Critical Illness Cover** to ₹{recommended_ci:,.0f} (3x your annual income).")
+        recommendations.append(f"🏥 **Enhance Critical Illness Cover** to ₹{recommended_ci:,.0f} ({'4x' if age > 45 else '3x'} your annual income).")
+    
+    if age < 35:
+        recommendations.append("💼 **Start Early Advantage** - Lock in lower premiums while you're young and healthy.")
+    elif age > 50:
+        recommendations.append("⏰ **Age Factor** - Consider comprehensive health riders as medical risks increase with age.")
     
     if net_savings < annual_income * 0.2:
         recommendations.append("💰 **Improve Savings Rate** - Aim to save at least 20% of your income for long-term financial security.")
     
     if total_debts > annual_income * 2:
-        recommendations.append("📉 **Debt Management** - Your debt-to-income ratio is high. Consider debt consolidation or prepayment strategies.")
+        recommendations.append("📉 **Debt Management** - Your debt-to-income ratio is high. Ensure coverage includes debt protection.")
     
     recommendations.append("📊 **Build Emergency Fund** - Maintain 6 months of expenses as emergency fund.")
     recommendations.append("🔄 **Review Annually** - Review and adjust your insurance coverage every year to account for inflation and life changes.")
     
     return {
+        'age': age,
+        'marital_status': marital_status,
+        'dependents': dependents,
         'annual_expenses': annual_expenses,
         'net_savings': net_savings,
         'recommended_min': recommended_min,
         'recommended_max': recommended_max,
+        'base_multiplier': base_multiplier,
         'premium_percentage': premium_percentage,
         'total_debts': total_debts,
         'coverage_gap': coverage_gap,
@@ -183,15 +209,29 @@ def calculate_analysis(age, marital_status, dependents, annual_income, monthly_e
         'max_affordable_premium': max_affordable_premium
     }
 
-def generate_detailed_analysis(annual_income, monthly_expenses, current_coverage, annual_premium, 
-                              home_loan, age, dependents, critical_illness, accident_cover, inflation_rate):
+def generate_detailed_analysis(age, marital_status, dependents, annual_income, monthly_expenses, 
+                              current_coverage, annual_premium, home_loan, other_debts,
+                              critical_illness, accident_cover, inflation_rate):
     """Generate detailed analysis using financial rules"""
     
     # Calculations
     annual_expenses = monthly_expenses * 12
-    recommended_min = annual_income * 10
-    recommended_max = annual_income * 15
+    
+    # Adjust multiplier based on profile
+    base_multiplier = 10
+    if marital_status == 'Married':
+        base_multiplier += 2
+    if dependents > 0:
+        base_multiplier += (dependents * 1)
+    if age < 30:
+        base_multiplier += 1
+    elif age > 50:
+        base_multiplier -= 1
+    
+    recommended_min = annual_income * base_multiplier
+    recommended_max = annual_income * (base_multiplier + 5)
     premium_percentage = (annual_premium / annual_income) * 100
+    total_debts = home_loan + other_debts
     
     # Coverage gap
     coverage_gap = max(0, recommended_min - current_coverage)
@@ -200,17 +240,35 @@ def generate_detailed_analysis(annual_income, monthly_expenses, current_coverage
     inflation_decimal = inflation_rate / 100
     future_expenses_10y = annual_expenses * ((1 + inflation_decimal) ** 10)
     
+    # Recommended critical illness cover
+    recommended_ci = annual_income * 3 if age <= 45 else annual_income * 4
+    
     # Generate detailed report
     report = f"""
 ## 🏦 FINANCIAL ADVISORY ANALYSIS REPORT
 
+### CLIENT PROFILE
+---
+**Age:** {age} years  
+**Marital Status:** {marital_status}  
+**Dependents:** {dependents}  
+**Annual Income:** ₹{annual_income:,}  
+**Life Stage:** {"Young Professional" if age < 35 else "Mid-Career" if age < 50 else "Pre-Retirement"}
+
 ### 1. COVERAGE ADEQUACY ASSESSMENT
 ---
 **Current Coverage:** ₹{current_coverage:,} ({current_coverage/annual_income:.1f}x income)  
-**Recommended Range:** ₹{recommended_min:,} - ₹{recommended_max:,} (10-15x income)  
+**Recommended Range:** ₹{recommended_min:,} - ₹{recommended_max:,} ({base_multiplier}-{base_multiplier+5}x income)  
+**Multiplier Applied:** {base_multiplier}x (Base 10x + Adjustments)  
 **Assessment:** {"**⚠️ UNDERINSURED**" if coverage_gap > 0 else "**✅ ADEQUATE**"}  
 **Coverage Gap:** ₹{coverage_gap:,}  
-**Risk Factors:** Home loan ₹{home_loan:,} + {dependents} dependents  
+**Risk Factors:** Home loan ₹{home_loan:,} + Other debts ₹{other_debts:,} + {dependents} dependents  
+
+**Multiplier Breakdown:**
+- Base Coverage: 10x income
+{f"- Married: +2x income" if marital_status == "Married" else ""}
+{f"- Dependents ({dependents}): +{dependents}x income" if dependents > 0 else ""}
+{f"- Young Age Bonus: +1x income" if age < 30 else f"- Age Adjustment: -1x income" if age > 50 else ""}
 
 {"🎯 **RECOMMENDATION:** Increase coverage by ₹" + f"{coverage_gap:,}" if coverage_gap > 0 else "✅ **STATUS:** Current coverage is adequate"}
 
@@ -226,12 +284,26 @@ def generate_detailed_analysis(annual_income, monthly_expenses, current_coverage
 ### 3. RIDER ANALYSIS
 ---
 **Critical Illness Cover:** ₹{critical_illness:,} (Current)  
-**Recommended CI Cover:** ₹{annual_income * 3:,} (3x income)  
+**Recommended CI Cover:** ₹{recommended_ci:,} ({'4x income (age >45)' if age > 45 else '3x income'})  
 **Accidental Death:** ₹{accident_cover:,} {"✅ (Adequate)" if accident_cover >= current_coverage * 2 else "⚠️ (Consider increasing)"}  
 
-🏥 **RECOMMENDATION:** {"Increase Critical Illness cover to ₹" + f"{annual_income * 3:,}" if critical_illness < annual_income * 3 else "Critical illness coverage is adequate"}
+🏥 **RECOMMENDATION:** {"Increase Critical Illness cover to ₹" + f"{recommended_ci:,}" if critical_illness < recommended_ci else "Critical illness coverage is adequate"}
 
-### 4. INFLATION PROTECTION STRATEGY
+### 4. FAMILY PROTECTION ANALYSIS
+---
+**Marital Status:** {marital_status}  
+**Number of Dependents:** {dependents}  
+**Monthly Family Expenses:** ₹{monthly_expenses:,}  
+**Annual Family Expenses:** ₹{annual_expenses:,}  
+**Total Debt Burden:** ₹{total_debts:,}  
+
+📊 **FAMILY PROTECTION NEEDS:**
+{f"- Spouse support for {65 - age} years" if marital_status == "Married" else ""}
+{f"- Child education & marriage: ₹{dependents * 2000000:,}" if dependents > 0 else ""}
+- Emergency fund: ₹{monthly_expenses * 6:,} (6 months)
+- Debt coverage: ₹{total_debts:,}
+
+### 5. INFLATION PROTECTION STRATEGY
 ---
 **Current Annual Expenses:** ₹{annual_expenses:,}  
 **Expenses in 10 years ({inflation_rate}% inflation):** ₹{future_expenses_10y:,}  
@@ -239,42 +311,99 @@ def generate_detailed_analysis(annual_income, monthly_expenses, current_coverage
 
 📈 **STRATEGIES:**
 - Increase coverage by 8-10% every 3 years
-- Start SIP of ₹15,000/month in equity mutual funds
+- Start SIP of ₹{int(annual_income * 0.02):,}/month in equity mutual funds
 - Maximize PPF contribution (₹1.5L annually)
 - Consider ULIP with top-up facility
 
-### 5. IMMEDIATE ACTION PLAN
+### 6. AGE-BASED RECOMMENDATIONS
+---
+**Current Age:** {age} years  
+**Retirement Age:** 60 years  
+**Years to Retirement:** {60 - age} years  
+
+"""
+
+    if age < 35:
+        report += """
+**🌟 YOUNG PROFESSIONAL ADVANTAGES:**
+- Lock in lower premiums now (premiums increase 3-5% per age year)
+- Longer investment horizon for wealth building
+- Higher risk appetite for equity investments
+- Time to build substantial corpus through compounding
+- Consider 30-40 year term plans for maximum protection
+"""
+    elif age < 50:
+        report += """
+**💼 MID-CAREER FOCUS:**
+- Peak earning years - maximize savings and investments
+- Review and increase coverage to match income growth
+- Balance between protection and wealth accumulation
+- Consider 20-25 year term plans
+- Focus on debt reduction strategies
+"""
+    else:
+        report += """
+**⏰ PRE-RETIREMENT PRIORITIES:**
+- Ensure adequate health insurance coverage
+- Focus on debt elimination before retirement
+- Build retirement corpus aggressively
+- Consider 10-15 year term plans
+- Increase critical illness and health riders
+"""
+
+    report += f"""
+
+### 7. IMMEDIATE ACTION PLAN
 ---
 **🎯 Priority 1 (Next 30 days):**
 - Increase term insurance to ₹{recommended_min:,}
 - Build emergency fund: ₹{monthly_expenses * 6:,} (6 months expenses)
+{f"- Review family health insurance for {dependents + (2 if marital_status == 'Married' else 1)} members" if dependents > 0 or marital_status == "Married" else ""}
 
 **📋 Priority 2 (Next 90 days):**
-- Enhance Critical Illness cover to ₹{annual_income * 3:,}
-- Start monthly SIP of ₹10,000 in diversified equity funds
+- Enhance Critical Illness cover to ₹{recommended_ci:,}
+- Start monthly SIP of ₹{int(annual_income * 0.02):,} in diversified equity funds
+{f"- Create education fund for {dependents} dependent(s)" if dependents > 0 else ""}
 
 **📅 Priority 3 (Next 6 months):**
 - Review and optimize home loan prepayment strategy
 - Set up automatic premium payments with annual increases
+- Create succession planning documents (will, nominations)
 
-### 6. FINANCIAL HEALTH SCORE
+### 8. FINANCIAL HEALTH SCORE
 ---
 """
     
     # Calculate scores
     insurance_score = min(10, (current_coverage / recommended_min) * 10)
     premium_score = 9 if premium_percentage < 5 else 7 if premium_percentage < 10 else 4
-    debt_score = 7 if home_loan < annual_income * 2 else 5 if home_loan < annual_income * 3 else 3
-    overall_score = (insurance_score + premium_score + debt_score) / 3
+    debt_score = 7 if total_debts < annual_income * 2 else 5 if total_debts < annual_income * 3 else 3
+    net_savings = annual_income - annual_expenses
+    savings_score = 9 if net_savings > annual_income * 0.3 else 7 if net_savings > annual_income * 0.2 else 4
+    overall_score = (insurance_score + premium_score + debt_score + savings_score) / 4
     
     report += f"""
 **Insurance Coverage:** {insurance_score:.1f}/10 {"(Underinsured)" if insurance_score < 8 else "(Good)" if insurance_score < 10 else "(Excellent)"}  
 **Premium Affordability:** {premium_score:.1f}/10 {"(Highly affordable)" if premium_score >= 8 else "(Affordable)" if premium_score >= 6 else "(High)"}  
 **Debt Management:** {debt_score:.1f}/10 {"(Manageable)" if debt_score >= 6 else "(Needs attention)"}  
+**Savings Rate:** {savings_score:.1f}/10 {"(Excellent)" if savings_score >= 8 else "(Good)" if savings_score >= 6 else "(Needs improvement)"}  
 **Overall Score:** {overall_score:.1f}/10 {"🟢 **Good foundation, needs enhancement**" if overall_score >= 6 else "🟡 **Needs improvement**"}
 
+### 9. KEY TAKEAWAYS
 ---
-*This analysis is based on standard financial planning principles. Please consult a certified financial planner for personalized advice.*
+✅ **Strengths:**
+{f"- Premium is highly affordable at {premium_percentage:.1f}% of income" if premium_percentage < 5 else f"- Premium is manageable at {premium_percentage:.1f}% of income" if premium_percentage < 10 else ""}
+{f"- Good debt management (Debt-to-Income: {total_debts/annual_income:.1f}x)" if total_debts < annual_income * 2 else ""}
+{f"- Strong savings rate: {(net_savings/annual_income*100):.1f}%" if net_savings > annual_income * 0.2 else ""}
+
+⚠️ **Areas for Improvement:**
+{f"- Coverage gap of ₹{coverage_gap:,}" if coverage_gap > 0 else ""}
+{f"- Critical illness cover needs enhancement" if critical_illness < recommended_ci else ""}
+{f"- High debt-to-income ratio ({total_debts/annual_income:.1f}x)" if total_debts > annual_income * 2 else ""}
+{f"- Savings rate needs improvement ({(net_savings/annual_income*100):.1f}%)" if net_savings < annual_income * 0.2 else ""}
+
+---
+*This analysis is based on standard financial planning principles and considers your age ({age}), marital status ({marital_status}), and dependents ({dependents}). Please consult a certified financial planner for personalized advice.*
 """
     
     return report
@@ -591,10 +720,10 @@ def get_policy_recommendation():
         risk_category = calculate_risk_score(age, income, driving_record, smoker)
         # 6️⃣ Return JSON response
         return jsonify({
-    'success': True,
-    'risk_category': risk_category,  # e.g., "🔴 High Risk"
-    'recommendation': recommendation
-}), 200
+            'success': True,
+            'risk_category': risk_category,  # e.g., "🔴 High Risk"
+            'recommendation': recommendation
+        }), 200
     except Exception as e:
         print("Error in /api/policy-recommend:", str(e))
 
