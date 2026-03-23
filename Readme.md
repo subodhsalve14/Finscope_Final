@@ -7,7 +7,17 @@
 ## 📸 Screenshots & Demo
 
 
-![Dashboard Overview](assets/dashboard.png)
+<p align="center">
+  <img src="assets/1.PNG" width="800" alt="Dashboard Overview">
+   <img src="assets/2.PNG" width="800" alt="Dashboard Overview">
+   <img src="assets/3.PNG" width="800" alt="Dashboard Overview"> 
+  <img src="assets/4.PNG" width="800" alt="Dashboard Overview">
+   <img src="assets/5.PNG" width="800" alt="Dashboard Overview">
+   <img src="assets/6.PNG" width="800" alt="Dashboard Overview">
+   <img src="assets/7.PNG" width="800" alt="Dashboard Overview">
+   <img src="assets/8.PNG" width="800" alt="Dashboard Overview">
+   <img src="assets/9.PNG" width="800" alt="Dashboard Overview">
+</p>
 
 
 
@@ -41,20 +51,6 @@ FinScope uses a modular, multi-tier architecture designed for fault isolation an
 * **Optimization:** SIP recommendations are treated as a mathematical optimization problem using the Future Value of an Ordinary Annuity formula.
 * **Transparency:** Includes an explainability layer to build user trust through transparent AI predictions.
 
----
-
-## 📊 Performance Analysis
-
-FinScope's Prophet-based model consistently outperforms traditional ARIMA models across multiple economic indicators.
-
-| Indicator | Uncertainty Coverage | Trend Capture | Overall Score |
-| :--- | :--- | :--- | :--- |
-| **Inflation** | 90.9% | 65.4% | **85.3%** |
-| **GDP** | 100.0% | 89.5% | **91.9%** |
-| **Interest Rates** | 81.8% | 61.6% | **82.7%** |
-| **Average** | **90.9%** | **72.2%** | **86.6%** |
-
-*Note: The Prophet model achieved an overall average accuracy of 88.5% compared to ARIMA’s 50.6% in comprehensive metric testing.*
 
 ---
 
